@@ -435,15 +435,59 @@ function applyDesign(design,poem){
 // All calls go to /api/gemini — your Vercel proxy
 // The GEMINI_API_KEY never leaves the server
 async function callGemini(prompt){
-  const res=await fetch('/api/gemini',{
-    method:'POST',
-    headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({prompt})
-  });
-  if(!res.ok) throw new Error(`Proxy error: ${res.status}`);
-  const data=await res.json();
-  if(data.error) throw new Error(data.error);
+  let res;
+  try {
+    res = await fetch('/api/gemini',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({prompt})
+    });
+  } catch(networkErr) {
+    showError('Network error — are you online? ' + networkErr.message);
+    throw networkErr;
+  }
+
+  let data;
+  try {
+    data = await res.json();
+  } catch(parseErr) {
+    showError('Server returned invalid response (status ' + res.status + ')');
+    throw parseErr;
+  }
+
+  if (!res.ok || data.error) {
+    const msg = data.error || 'Unknown server error (status ' + res.status + ')';
+    showError(msg);
+    throw new Error(msg);
+  }
+
+  if (!data.text) {
+    showError('AI returned empty response — please try again');
+    throw new Error('Empty AI response');
+  }
+
   return data.text;
+}
+
+// Show a visible error banner so the user knows exactly what went wrong
+function showError(msg) {
+  setLoader(false);
+  // Remove any existing error banner
+  const existing = document.getElementById('errBanner');
+  if (existing) existing.remove();
+
+  const banner = document.createElement('div');
+  banner.id = 'errBanner';
+  banner.style.cssText = `
+    position:fixed;top:20px;left:50%;transform:translateX(-50%);
+    background:#fff0f0;border:1px solid #e08080;color:#8b2020;
+    padding:14px 24px;border-radius:3px;z-index:7000;
+    font-family:'DM Mono',monospace;font-size:.72rem;letter-spacing:.1em;
+    max-width:90vw;text-align:center;box-shadow:0 4px 20px rgba(0,0,0,.1);
+  `;
+  banner.innerHTML = `⚠ ${msg} <span onclick="this.parentElement.remove()" style="cursor:pointer;margin-left:12px;opacity:.5;">✕</span>`;
+  document.body.appendChild(banner);
+  setTimeout(() => banner?.remove(), 8000);
 }
 
 /* ══════════════ AI FUNCTIONS ══════════════ */
@@ -559,7 +603,7 @@ function fallback(mode){
   const d=JSON.parse(JSON.stringify(TEMPLATES[0]));
   const p=mode==='story'?"In the space between words\nyou left a light on—\na signal I still follow\nthrough seasons that forgot your name."
     :(document.getElementById(mode==='own'?'ownInput':'enhanceInput').value.trim()||"Words find their home here.");
-  curDesign=d;curPoem=p;showCard(d,p);showToast('Check your internet or try again');
+  curDesign=d;curPoem=p;showCard(d,p);
 }
 
 /* ══════════════ REGENERATE ══════════════ */
