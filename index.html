@@ -1,0 +1,624 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Poetry Station</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400;1,700&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400;1,600&family=DM+Mono:wght@300;400;500&family=Cinzel:wght@400;600&family=IM+Fell+English:ital@0;1&family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=Josefin+Sans:wght@100;300;400&family=Spectral:ital,wght@0,300;0,400;1,300;1,400&family=Tenor+Sans&family=Crimson+Pro:ital,wght@0,300;0,400;1,300;1,400&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#100d08;--cream:#fdf9f2;--gold:#c4913a;--gold2:#e8c97a;
+  --dust:#7a6a52;--border:#ddd0b4;--parch:#f0e8d4;--sage:#4a6741;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:var(--cream);color:var(--ink);font-family:'Cormorant Garamond',serif;min-height:100vh;overflow-x:hidden;}
+body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:9999;opacity:.35;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='4'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23g)' opacity='.04'/%3E%3C/svg%3E");}
+
+/* ── LOADER ── */
+#loader{display:none;position:fixed;inset:0;background:rgba(253,249,242,.95);z-index:6000;align-items:center;justify-content:center;flex-direction:column;gap:20px;}
+#loader.on{display:flex;}
+.lq{font-size:3rem;animation:lqa 1.5s ease-in-out infinite;}
+@keyframes lqa{0%,100%{transform:rotate(-15deg) translateY(0)}50%{transform:rotate(8deg) translateY(-10px)}}
+.lt{font-family:'Playfair Display',serif;font-style:italic;font-size:1.1rem;color:var(--gold);animation:lta 1.5s ease-in-out infinite;}
+@keyframes lta{0%,100%{opacity:.3}50%{opacity:1}}
+
+/* ── TOAST ── */
+#toast{position:fixed;bottom:26px;left:50%;transform:translateX(-50%) translateY(70px);background:var(--ink);color:#f5ead8;padding:11px 28px;border-radius:2px;font-family:'DM Mono',monospace;font-size:.68rem;letter-spacing:.18em;transition:transform .4s;z-index:8000;}
+#toast.on{transform:translateX(-50%) translateY(0);}
+
+/* ── HEADER ── */
+header{text-align:center;padding:52px 20px 28px;}
+.site-name{font-family:'Cinzel',serif;font-size:clamp(1.8rem,5vw,3.2rem);font-weight:600;letter-spacing:.12em;background:linear-gradient(135deg,#8a6020,var(--gold),#c4913a,#e8c060);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+.site-sub{font-family:'Cormorant Garamond',serif;font-style:italic;font-size:1rem;color:var(--dust);letter-spacing:.14em;margin-top:6px;}
+.hline{width:140px;height:1px;margin:20px auto 0;background:linear-gradient(90deg,transparent,var(--gold),transparent);}
+nav{display:flex;justify-content:center;gap:36px;padding:18px;}
+nav a{font-family:'DM Mono',monospace;font-size:.68rem;letter-spacing:.25em;text-transform:uppercase;color:var(--dust);text-decoration:none;cursor:pointer;padding-bottom:3px;border-bottom:1px solid transparent;transition:all .2s;}
+nav a:hover,nav a.on{color:var(--gold);border-color:var(--gold);}
+
+/* ── PAGES ── */
+main{max-width:1220px;margin:0 auto;padding:0 24px 100px;}
+.page{display:none;animation:pgin .45s ease;}
+.page.on{display:block;}
+@keyframes pgin{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+
+/* ── HOME ── */
+.hero{text-align:center;padding:48px 20px;max-width:660px;margin:0 auto;}
+.hero-head{font-family:'Playfair Display',serif;font-weight:400;font-size:clamp(1.5rem,4vw,2.4rem);line-height:1.3;margin-bottom:18px;}
+.hero-head em{font-style:italic;color:var(--gold);}
+.hero-p{color:var(--dust);font-size:1.1rem;line-height:1.85;margin-bottom:32px;}
+.hero-btn{display:inline-block;padding:14px 38px;background:var(--ink);color:#f5ead8;font-family:'Cinzel',serif;font-size:.85rem;letter-spacing:.18em;cursor:pointer;border-radius:2px;border:none;transition:all .2s;}
+.hero-btn:hover{background:var(--gold);color:var(--ink);}
+.float-row{display:flex;gap:16px;justify-content:center;flex-wrap:wrap;margin-top:52px;}
+.float-card{width:110px;aspect-ratio:3/4;border-radius:3px;overflow:hidden;position:relative;box-shadow:0 8px 28px rgba(0,0,0,.18);animation:fc 4s ease-in-out infinite;cursor:pointer;}
+.float-card:nth-child(2){animation-delay:.8s}.float-card:nth-child(3){animation-delay:1.5s}.float-card:nth-child(4){animation-delay:2.2s}
+@keyframes fc{0%,100%{transform:translateY(0)}50%{transform:translateY(-9px)}}
+.float-card canvas{position:absolute;inset:0;width:100%;height:100%;}
+
+/* ── CREATE LAYOUT ── */
+.create-wrap{display:grid;grid-template-columns:1fr 1fr;gap:52px;align-items:start;margin-top:36px;}
+@media(max-width:760px){.create-wrap{grid-template-columns:1fr;}}
+.ptag{font-family:'DM Mono',monospace;font-size:.62rem;letter-spacing:.3em;text-transform:uppercase;color:var(--gold);margin-bottom:10px;}
+.sec-title{font-family:'Playfair Display',serif;font-size:1.7rem;font-weight:400;margin-bottom:6px;}
+.sec-title em{color:var(--gold);font-style:italic;}
+.sec-desc{color:var(--dust);font-size:.97rem;line-height:1.75;}
+
+/* ── WRITING MODE CARDS ── */
+.wmode-label{font-family:'DM Mono',monospace;font-size:.62rem;letter-spacing:.3em;text-transform:uppercase;color:var(--gold);margin-bottom:12px;margin-top:28px;}
+.wmode-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:20px;}
+.wmc{border:1.5px solid var(--border);border-radius:4px;padding:14px 10px 12px;cursor:pointer;transition:all .22s;text-align:center;background:#fffdf8;position:relative;overflow:hidden;}
+.wmc:hover{border-color:var(--gold);transform:translateY(-1px);}
+.wmc.on{border-color:var(--gold);background:linear-gradient(160deg,#fffdf8,#fdf4e3);}
+.wmc.on::after{content:'';position:absolute;inset:0;border:1.5px solid var(--gold);border-radius:3px;pointer-events:none;}
+.wmc-icon{font-size:1.4rem;margin-bottom:6px;display:block;}
+.wmc-title{font-family:'DM Mono',monospace;font-size:.62rem;letter-spacing:.16em;text-transform:uppercase;color:var(--ink);display:block;margin-bottom:4px;}
+.wmc-desc{font-family:'Cormorant Garamond',serif;font-style:italic;font-size:.82rem;color:var(--dust);line-height:1.4;}
+.wmc-badge{position:absolute;top:6px;right:6px;font-family:'DM Mono',monospace;font-size:.5rem;letter-spacing:.12em;text-transform:uppercase;padding:2px 6px;border-radius:10px;}
+.badge-ai{background:#e8f0ff;color:#3a5aaa;}
+.badge-own{background:#e8f5e8;color:#3a7a3a;}
+.badge-plus{background:#fff3e0;color:#a06020;}
+
+/* ── INPUT PANELS ── */
+.input-panel{display:none;}.input-panel.on{display:block;}
+textarea{width:100%;min-height:220px;background:#fffdf8;border:1px solid var(--border);border-radius:2px;padding:20px;font-family:'Cormorant Garamond',serif;font-size:1.1rem;color:var(--ink);resize:vertical;line-height:1.8;outline:none;transition:border-color .25s;}
+textarea:focus{border-color:var(--gold);}
+textarea::placeholder{color:#c0ad88;font-style:italic;}
+
+/* ── SPELL PANEL ── */
+.spell-panel{margin-top:12px;background:#fffdf8;border:1px solid var(--border);border-radius:2px;padding:16px 18px;display:none;}
+.spell-panel.on{display:block;}
+.spell-head{font-family:'DM Mono',monospace;font-size:.6rem;letter-spacing:.22em;text-transform:uppercase;color:var(--sage);margin-bottom:10px;display:flex;align-items:center;gap:8px;}
+.spell-head::before{content:'✓';font-size:.9rem;}
+.spell-diff{font-family:'Cormorant Garamond',serif;font-size:1rem;line-height:1.9;color:var(--ink);}
+.spell-diff del{color:#c04040;text-decoration:line-through;background:#ffeaea;padding:0 2px;border-radius:2px;}
+.spell-diff ins{color:#2a7a2a;text-decoration:none;background:#eafaea;padding:0 2px;border-radius:2px;font-style:italic;}
+.spell-actions{display:flex;gap:8px;margin-top:12px;}
+.spell-btn{padding:7px 18px;border-radius:2px;font-family:'DM Mono',monospace;font-size:.6rem;letter-spacing:.16em;text-transform:uppercase;cursor:pointer;transition:all .2s;}
+.spell-btn.accept{background:var(--sage);color:#fff;border:1px solid var(--sage);}
+.spell-btn.dismiss{background:transparent;color:var(--dust);border:1px solid var(--border);}
+.spell-btn:hover{opacity:.8;}
+
+/* ── ENHANCE PANEL ── */
+.enhance-preview{margin-top:12px;background:#fffdf8;border:1px dashed var(--gold2);border-radius:2px;padding:16px 18px;display:none;}
+.enhance-preview.on{display:block;}
+.enhance-head{font-family:'DM Mono',monospace;font-size:.6rem;letter-spacing:.22em;text-transform:uppercase;color:var(--gold);margin-bottom:10px;}
+.enhance-text{font-family:'Cormorant Garamond',serif;font-size:1rem;font-style:italic;line-height:1.9;color:var(--ink);white-space:pre-line;}
+.enhance-note{font-family:'DM Mono',monospace;font-size:.58rem;letter-spacing:.14em;color:var(--dust);margin-top:8px;}
+.enhance-acts{display:flex;gap:8px;margin-top:12px;}
+
+/* ── DESIGN MODE ── */
+.mode-row{display:flex;gap:8px;margin-bottom:14px;}
+.mbtn{padding:7px 18px;border:1px solid var(--border);border-radius:20px;font-family:'DM Mono',monospace;font-size:.62rem;letter-spacing:.18em;text-transform:uppercase;cursor:pointer;background:transparent;color:var(--dust);transition:all .2s;}
+.mbtn.on{background:var(--gold);border-color:var(--gold);color:var(--ink);}
+.tpl-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;}
+.tthumb{aspect-ratio:3/4;border-radius:3px;cursor:pointer;position:relative;overflow:hidden;border:2px solid transparent;transition:border-color .2s,transform .2s;}
+.tthumb:hover{transform:translateY(-2px);}.tthumb.on{border-color:var(--gold);}
+.tthumb canvas{position:absolute;inset:0;width:100%;height:100%;}
+.tthumb .tlb{position:absolute;bottom:0;left:0;right:0;background:rgba(0,0,0,.52);color:#fff;font-family:'DM Mono',monospace;font-size:.52rem;letter-spacing:.14em;text-transform:uppercase;padding:5px;text-align:center;}
+
+/* ── GENERATE BTN ── */
+.gen-btn{width:100%;padding:15px;margin-top:20px;background:var(--ink);color:#f5ead8;border:none;font-family:'Cinzel',serif;font-size:.9rem;letter-spacing:.16em;cursor:pointer;border-radius:2px;transition:background .2s,transform .1s;position:relative;overflow:hidden;}
+.gen-btn:hover{background:#2a1e08;}.gen-btn:active{transform:scale(.99);}
+.gen-btn .sh{position:absolute;inset:0;background:linear-gradient(90deg,transparent,rgba(201,150,63,.18),transparent);transform:translateX(-100%);transition:transform .7s;}
+.gen-btn:hover .sh{transform:translateX(100%);}
+
+/* ── CARD ── */
+.card-zone{display:none;}.card-zone.on{display:block;}
+.card-shell{width:100%;max-width:370px;aspect-ratio:3/4;margin:0 auto;border-radius:4px;position:relative;overflow:hidden;box-shadow:0 24px 64px rgba(0,0,0,.3),0 4px 16px rgba(0,0,0,.12);}
+#cardCanvas{position:absolute;inset:0;width:100%;height:100%;}
+.card-deco-border{position:absolute;inset:13px;pointer-events:none;border-radius:2px;}
+.card-content{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:36px 30px;}
+.card-poem-el{font-size:.88rem;line-height:2;filter:drop-shadow(0 1px 8px rgba(0,0,0,.55));}
+.card-rule-el{width:32px;height:1px;margin:13px auto;}
+.card-by-el{font-family:'DM Mono',monospace;font-size:.58rem;letter-spacing:.24em;text-transform:uppercase;opacity:.72;margin-top:4px;}
+.card-orn-el{font-size:1.3rem;margin-bottom:12px;filter:drop-shadow(0 1px 6px rgba(0,0,0,.5));}
+.card-acts{display:flex;gap:10px;margin-top:22px;justify-content:center;flex-wrap:wrap;}
+.abtn{padding:9px 22px;border-radius:2px;cursor:pointer;font-family:'DM Mono',monospace;font-size:.62rem;letter-spacing:.18em;text-transform:uppercase;transition:opacity .2s;}
+.abtn.p{background:var(--gold);color:var(--ink);border:1px solid var(--gold);}
+.abtn.s{background:transparent;color:var(--gold);border:1px solid var(--gold);}
+.abtn:hover{opacity:.78;}
+.hint-box{padding:70px 20px;text-align:center;color:#c0ad88;font-style:italic;font-size:1.05rem;line-height:1.85;}
+
+/* ── GALLERY ── */
+.gal-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:18px;margin-top:38px;}
+.gi{aspect-ratio:3/4;border-radius:3px;position:relative;overflow:hidden;cursor:pointer;box-shadow:0 6px 20px rgba(0,0,0,.12);transition:transform .3s,box-shadow .3s;}
+.gi:hover{transform:translateY(-5px) scale(1.02);box-shadow:0 18px 44px rgba(0,0,0,.22);}
+.gi canvas{position:absolute;inset:0;width:100%;height:100%;}
+.gi .gh{position:absolute;inset:0;background:rgba(0,0,0,.42);opacity:0;transition:opacity .3s;display:flex;align-items:center;justify-content:center;color:#fff;font-family:'DM Mono',monospace;font-size:.58rem;letter-spacing:.2em;text-transform:uppercase;}
+.gi:hover .gh{opacity:1;}
+.gi .gp{position:absolute;inset:14px;display:flex;align-items:center;justify-content:center;text-align:center;font-size:.62rem;font-style:italic;line-height:1.6;pointer-events:none;}
+.empty-g{grid-column:1/-1;text-align:center;padding:80px 20px;color:#b0a080;font-style:italic;font-size:1rem;}
+.divider{width:100%;height:1px;background:linear-gradient(90deg,transparent,var(--border),transparent);margin:20px 0;}
+</style>
+</head>
+<body>
+
+<div id="loader"><div class="lq">✍️</div><div class="lt" id="ltxt">Weaving your world…</div></div>
+<div id="toast"></div>
+
+<header>
+  <div class="site-name">Poetry Station</div>
+  <div class="site-sub">Where Every Story Becomes a World</div>
+  <div class="hline"></div>
+  <nav>
+    <a class="on" onclick="goNav('home')">Home</a>
+    <a onclick="goNav('create')">Create</a>
+    <a onclick="goNav('gallery')">Gallery</a>
+  </nav>
+</header>
+
+<main>
+
+<!-- ══ HOME ══ -->
+<div class="page on" id="p-home">
+  <div class="hero">
+    <div class="hero-head">Your story deserves<br>a <em>world of its own</em></div>
+    <p class="hero-p">Share your story, write your own poem, or let AI enhance your words. Every card is painted uniquely — background, fonts, colors, layout — all designed to match your emotion.</p>
+    <button class="hero-btn" onclick="goNav('create')">Begin Your Story</button>
+  </div>
+  <div class="float-row" id="floatRow"></div>
+</div>
+
+<!-- ══ CREATE ══ -->
+<div class="page" id="p-create">
+  <div class="sec-title">Create Your <em>Poetry Card</em></div>
+  <div class="sec-desc">Choose how you want to write. The AI always designs the background, fonts, and layout — you decide how the words are made.</div>
+
+  <div class="create-wrap">
+    <!-- LEFT -->
+    <div>
+      <div class="wmode-label">① How would you like to write?</div>
+      <div class="wmode-cards">
+        <div class="wmc on" id="wmc-story" onclick="setWriteMode('story')">
+          <span class="wmc-badge badge-ai">AI writes</span>
+          <span class="wmc-icon">📖</span>
+          <span class="wmc-title">Share a Story</span>
+          <span class="wmc-desc">Tell your story, AI turns it into a poem</span>
+        </div>
+        <div class="wmc" id="wmc-own" onclick="setWriteMode('own')">
+          <span class="wmc-badge badge-own">Your words</span>
+          <span class="wmc-icon">✍️</span>
+          <span class="wmc-title">Write My Poem</span>
+          <span class="wmc-desc">Your poem untouched — only spelling checked</span>
+        </div>
+        <div class="wmc" id="wmc-enhance" onclick="setWriteMode('enhance')">
+          <span class="wmc-badge badge-plus">AI polishes</span>
+          <span class="wmc-icon">✨</span>
+          <span class="wmc-title">Enhance Mine</span>
+          <span class="wmc-desc">Write a draft, AI refines the phrasing</span>
+        </div>
+      </div>
+
+      <!-- Panel A: Story -->
+      <div class="input-panel on" id="panel-story">
+        <div class="ptag">Your Story</div>
+        <textarea id="storyInput" placeholder="Write anything… a memory, a feeling, a place, a person. The AI will feel what you mean, write a poem, and design the whole card."></textarea>
+      </div>
+
+      <!-- Panel B: Own poem -->
+      <div class="input-panel" id="panel-own">
+        <div class="ptag">Your Poem</div>
+        <textarea id="ownInput" placeholder="Write your poem here, line by line…&#10;&#10;The AI will not change a single word.&#10;Only spelling will be gently checked."></textarea>
+        <div class="spell-panel" id="spellPanel">
+          <div class="spell-head">Spelling Suggestions</div>
+          <div class="spell-diff" id="spellDiff"></div>
+          <div class="spell-actions">
+            <button class="spell-btn accept" onclick="acceptSpelling()">Accept Corrections</button>
+            <button class="spell-btn dismiss" onclick="dismissSpelling()">Keep My Original</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Panel C: Enhance -->
+      <div class="input-panel" id="panel-enhance">
+        <div class="ptag">Your Poem Draft</div>
+        <textarea id="enhanceInput" placeholder="Write your poem draft…&#10;&#10;The AI keeps your meaning and voice intact, but refines phrasing and rhythm."></textarea>
+        <div class="enhance-preview" id="enhancePreview">
+          <div class="enhance-head">✨ AI-Enhanced Version</div>
+          <div class="enhance-text" id="enhanceText"></div>
+          <div class="enhance-note" id="enhanceNote">Your original voice is preserved.</div>
+          <div class="enhance-acts">
+            <button class="spell-btn accept" onclick="acceptEnhance()">Use Enhanced Version</button>
+            <button class="spell-btn dismiss" onclick="dismissEnhance()">Keep My Original</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="divider"></div>
+
+      <!-- Design mode -->
+      <div class="ptag">② Card Design</div>
+      <div class="mode-row">
+        <button class="mbtn on" id="bmAuto" onclick="setDesignMode('auto')">✦ AI Designs Everything</button>
+        <button class="mbtn" id="bmManual" onclick="setDesignMode('manual')">Choose a Template</button>
+      </div>
+      <div id="tplPicker" style="display:none;">
+        <div class="tpl-grid" id="tplGrid"></div>
+      </div>
+
+      <button class="gen-btn" id="genBtn" onclick="generate()">
+        <span class="sh"></span><span id="genLabel">✦ Create My Poetry Card</span>
+      </button>
+    </div>
+
+    <!-- RIGHT -->
+    <div>
+      <div class="ptag">③ Your Card</div>
+      <div class="card-zone" id="cardZone">
+        <div class="card-shell" id="cardShell">
+          <canvas id="cardCanvas"></canvas>
+          <div class="card-deco-border" id="cardDecoBorder"></div>
+          <div class="card-content" id="cardContent">
+            <div class="card-orn-el" id="cardOrn">❧</div>
+            <div class="card-poem-el" id="cardPoem"></div>
+            <div class="card-rule-el" id="cardRule"></div>
+            <div class="card-by-el" id="cardBy">— Poetry Station</div>
+          </div>
+        </div>
+        <div class="card-acts">
+          <button class="abtn p" onclick="saveCard()">Save to Gallery</button>
+          <button class="abtn s" onclick="copyPoem()">Copy Poem</button>
+          <button class="abtn s" onclick="regenerateCard()">New Design</button>
+        </div>
+      </div>
+      <div class="hint-box" id="hintBox">
+        Your unique poetry card will appear here.<br>
+        <span style="font-size:.85rem;opacity:.6;">Each card has its own AI-designed world.</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ GALLERY ══ -->
+<div class="page" id="p-gallery">
+  <div class="sec-title">The <em>Gallery</em></div>
+  <div class="sec-desc">Every card here is one-of-a-kind — painted by AI, worded by the human heart.</div>
+  <div class="gal-grid" id="galGrid"></div>
+</div>
+
+</main>
+
+<script>
+/* ══════════════ STATE ══════════════ */
+let writeMode='story', designMode='auto', selTpl=null;
+let curDesign=null, curPoem='', lastStory='', gallery=[];
+let spellCorrected='', enhancedPoem='';
+
+/* ══════════════ NAV ══════════════ */
+function goNav(p){
+  document.querySelectorAll('.page').forEach(x=>x.classList.remove('on'));
+  document.querySelectorAll('nav a').forEach(x=>x.classList.remove('on'));
+  document.getElementById('p-'+p).classList.add('on');
+  document.querySelectorAll('nav a')[['home','create','gallery'].indexOf(p)].classList.add('on');
+  if(p==='gallery') renderGallery();
+}
+
+/* ══════════════ WRITE MODE ══════════════ */
+function setWriteMode(m){
+  writeMode=m;
+  ['story','own','enhance'].forEach(k=>{
+    document.getElementById('wmc-'+k).classList.toggle('on',k===m);
+    document.getElementById('panel-'+k).classList.toggle('on',k===m);
+  });
+  document.getElementById('spellPanel').classList.remove('on');
+  document.getElementById('enhancePreview').classList.remove('on');
+  const labels={story:'✦ Create My Poetry Card',own:'✦ Check Spelling & Design Card',enhance:'✦ Enhance & Design Card'};
+  document.getElementById('genLabel').textContent=labels[m];
+}
+
+/* ══════════════ DESIGN MODE ══════════════ */
+function setDesignMode(m){
+  designMode=m;
+  document.getElementById('bmAuto').classList.toggle('on',m==='auto');
+  document.getElementById('bmManual').classList.toggle('on',m==='manual');
+  document.getElementById('tplPicker').style.display=m==='manual'?'block':'none';
+}
+
+/* ══════════════ SPELL / ENHANCE ACTIONS ══════════════ */
+function acceptSpelling(){document.getElementById('ownInput').value=spellCorrected;document.getElementById('spellPanel').classList.remove('on');showToast('Corrections applied ✦');}
+function dismissSpelling(){document.getElementById('spellPanel').classList.remove('on');showToast('Kept your original words ✦');}
+function acceptEnhance(){document.getElementById('enhanceInput').value=enhancedPoem;document.getElementById('enhancePreview').classList.remove('on');showToast('Enhanced version applied ✦');}
+function dismissEnhance(){document.getElementById('enhancePreview').classList.remove('on');showToast('Kept your original poem ✦');}
+
+/* ══════════════ TEMPLATES ══════════════ */
+const TEMPLATES=[
+  {name:'Midnight',   bg:{type:'radial_stars',  colors:['#050d1a','#0d1e38','#1a3060'],accent:'#7aaeff'}, text:{color:'#d4e4ff',align:'center',font:'Playfair Display',style:'italic', ornament:'✦'}},
+  {name:'Rose Garden',bg:{type:'petal_drift',   colors:['#1a0810','#3d1428','#6b2040'],accent:'#e8a0b8'}, text:{color:'#f5d8e8',align:'center',font:'IM Fell English', style:'italic', ornament:'❧'}},
+  {name:'Golden Dawn',bg:{type:'horizon_glow',  colors:['#1a0a02','#5a2008','#c04818'],accent:'#f0c060'}, text:{color:'#fff5e0',align:'left',  font:'Libre Baskerville',style:'italic', ornament:'◈'}},
+  {name:'Deep Forest',bg:{type:'organic_vein',  colors:['#030f03','#0a1f0a','#142814'],accent:'#70c060'}, text:{color:'#c8f0a8',align:'left',  font:'Spectral',         style:'normal', ornament:'⋈'}},
+  {name:'Storm',      bg:{type:'lightning_web', colors:['#04040e','#0a0a20','#141430'],accent:'#9090ff'}, text:{color:'#d0d8ff',align:'right', font:'Josefin Sans',     style:'normal', ornament:'⚡'}},
+  {name:'Parchment',  bg:{type:'aged_paper',    colors:['#d4c090','#c0a870','#a88848'],accent:'#704820'}, text:{color:'#201008',align:'center',font:'Cinzel',           style:'normal', ornament:'❦'}},
+];
+
+/* ══════════════ CANVAS PAINTER ══════════════ */
+function paintCanvas(canvas,design,W,H){
+  const ctx=canvas.getContext('2d');
+  canvas.width=W;canvas.height=H;
+  const bg=design.bg,colors=bg.colors,acc=bg.accent||'#fff';
+  let grd;
+  if(['radial_stars','petal_drift','soft_mist','aurora_veil'].includes(bg.type)){
+    grd=ctx.createRadialGradient(W*.4,H*.3,0,W*.5,H*.5,Math.max(W,H)*.75);
+  }else{grd=ctx.createLinearGradient(W*.3,0,W*.7,H);}
+  grd.addColorStop(0,colors[0]||'#000');grd.addColorStop(.5,colors[1]||colors[0]);grd.addColorStop(1,colors[2]||colors[1]||colors[0]);
+  ctx.fillStyle=grd;ctx.fillRect(0,0,W,H);
+  switch(bg.type){
+    case'radial_stars':{
+      const ag=ctx.createRadialGradient(W*.5,H*.15,0,W*.5,H*.15,W*.6);ag.addColorStop(0,ha(acc,.18));ag.addColorStop(1,'transparent');ctx.fillStyle=ag;ctx.fillRect(0,0,W,H);
+      for(let i=0;i<130;i++){ctx.beginPath();ctx.arc(r(W),r(H),r(1.6)+.3,0,Math.PI*2);ctx.fillStyle=`rgba(255,255,255,${r(.8)+.15})`;ctx.fill();}
+      const pts=[];for(let i=0;i<10;i++)pts.push([r(W),r(H*.6)]);ctx.strokeStyle='rgba(255,255,255,.07)';ctx.lineWidth=.5;
+      for(let i=0;i<pts.length-1;i++){ctx.beginPath();ctx.moveTo(pts[i][0],pts[i][1]);ctx.lineTo(pts[i+1][0],pts[i+1][1]);ctx.stroke();}break;}
+    case'petal_drift':{
+      const vig=ctx.createRadialGradient(W*.5,H*.5,0,W*.5,H*.5,Math.max(W,H)*.7);vig.addColorStop(0,ha(acc,.06));vig.addColorStop(1,'rgba(0,0,0,.45)');ctx.fillStyle=vig;ctx.fillRect(0,0,W,H);
+      for(let i=0;i<28;i++){ctx.save();ctx.translate(r(W),r(H));ctx.rotate(r(Math.PI*2));const sz=r(14)+6;ctx.beginPath();ctx.ellipse(0,0,sz*.35,sz,0,0,Math.PI*2);ctx.fillStyle=ha(acc,r(.3)+.07);ctx.fill();ctx.restore();}
+      const gs=ctx.createRadialGradient(W*.65,H*.72,0,W*.65,H*.72,W*.4);gs.addColorStop(0,ha(acc,.14));gs.addColorStop(1,'transparent');ctx.fillStyle=gs;ctx.fillRect(0,0,W,H);break;}
+    case'horizon_glow':{
+      const hg=ctx.createLinearGradient(0,H*.5,0,H);hg.addColorStop(0,ha(acc,.3));hg.addColorStop(1,'transparent');ctx.fillStyle=hg;ctx.fillRect(0,0,W,H);
+      for(let i=0;i<50;i++){ctx.beginPath();ctx.arc(r(W),H*.4+r(H*.6),r(2)+.5,0,Math.PI*2);ctx.fillStyle=ha(acc,r(.6)+.2);ctx.fill();}
+      for(let i=0;i<5;i++){const ang=-Math.PI*.5+(r(1)-.5)*.6;ctx.save();ctx.translate(W*.5,H*.55);ctx.rotate(ang);const rg=ctx.createLinearGradient(0,0,0,-H*.8);rg.addColorStop(0,ha(acc,.1));rg.addColorStop(1,'transparent');ctx.fillStyle=rg;ctx.beginPath();ctx.moveTo(-W*.04,0);ctx.lineTo(W*.04,0);ctx.lineTo(0,-H*.8);ctx.closePath();ctx.fill();ctx.restore();}break;}
+    case'organic_vein':{
+      ctx.strokeStyle=ha(acc,.15);ctx.lineWidth=1;
+      for(let i=0;i<14;i++){ctx.beginPath();let x=r(W),y=0;ctx.moveTo(x,y);for(let j=0;j<22;j++){x+=(r(30)-15);y+=H/22;ctx.lineTo(x,y);}ctx.stroke();}
+      for(let i=0;i<22;i++){const fx=r(W),fy=r(H);const fg=ctx.createRadialGradient(fx,fy,0,fx,fy,6+r(8));fg.addColorStop(0,ha(acc,.7));fg.addColorStop(1,'transparent');ctx.fillStyle=fg;ctx.fillRect(fx-14,fy-14,28,28);}break;}
+    case'lightning_web':{
+      ctx.strokeStyle=ha(acc,.22);ctx.lineWidth=.8;
+      for(let i=0;i<22;i++){ctx.beginPath();ctx.moveTo(r(W),r(H));ctx.lineTo(r(W),r(H));ctx.stroke();}
+      for(let i=0;i<18;i++){ctx.beginPath();ctx.arc(r(W),r(H),1.5,0,Math.PI*2);ctx.fillStyle=ha(acc,.5);ctx.fill();}
+      const eg=ctx.createRadialGradient(W*.5,H*.3,0,W*.5,H*.3,W*.5);eg.addColorStop(0,ha(acc,.12));eg.addColorStop(1,'transparent');ctx.fillStyle=eg;ctx.fillRect(0,0,W,H);break;}
+    case'aged_paper':{
+      for(let i=0;i<60;i++){ctx.beginPath();ctx.moveTo(0,r(H));ctx.lineTo(W,r(H)+(r(10)-5));ctx.strokeStyle=`rgba(0,0,0,${r(.04)})`;ctx.lineWidth=r(1);ctx.stroke();}
+      const cs=ctx.createRadialGradient(0,0,0,0,0,W*.5);cs.addColorStop(0,'rgba(100,60,10,.12)');cs.addColorStop(1,'transparent');ctx.fillStyle=cs;ctx.fillRect(0,0,W,H);
+      for(let i=0;i<50;i++){ctx.beginPath();ctx.arc(r(W),r(H),r(.8),0,Math.PI*2);ctx.fillStyle=`rgba(0,0,0,${r(.1)})`;ctx.fill();}break;}
+    case'soft_mist':{for(let i=0;i<5;i++){const mx=r(W),my=r(H);const mg=ctx.createRadialGradient(mx,my,0,mx,my,W*.5+r(W*.3));mg.addColorStop(0,ha(acc,.1));mg.addColorStop(1,'transparent');ctx.fillStyle=mg;ctx.fillRect(0,0,W,H);}break;}
+    case'aurora_veil':{
+      for(let band=0;band<4;band++){const by=H*.1+band*H*.22;const aug=ctx.createLinearGradient(0,by,0,by+H*.2);aug.addColorStop(0,'transparent');aug.addColorStop(.5,ha(acc,r(.15)+.05));aug.addColorStop(1,'transparent');ctx.fillStyle=aug;ctx.fillRect(0,by,W,H*.2);}
+      for(let i=0;i<80;i++){ctx.beginPath();ctx.arc(r(W),r(H),r(1.2)+.2,0,Math.PI*2);ctx.fillStyle=`rgba(255,255,255,${r(.5)+.1})`;ctx.fill();}break;}
+    case'geometric_shards':{
+      for(let i=0;i<20;i++){const x=r(W),y=r(H),s=r(80)+20;ctx.save();ctx.translate(x,y);ctx.rotate(r(Math.PI));ctx.beginPath();ctx.moveTo(0,-s);ctx.lineTo(s*.6,s*.5);ctx.lineTo(-s*.6,s*.5);ctx.closePath();ctx.fillStyle=ha(acc,r(.08)+.02);ctx.fill();ctx.strokeStyle=ha(acc,.15);ctx.lineWidth=.5;ctx.stroke();ctx.restore();}break;}
+    case'ink_wash':{for(let i=0;i<8;i++){const ix=r(W),iy=r(H);const ig=ctx.createRadialGradient(ix,iy,0,ix,iy,r(W*.4)+W*.1);ig.addColorStop(0,ha(acc,.2));ig.addColorStop(1,'transparent');ctx.fillStyle=ig;ctx.fillRect(0,0,W,H);}break;}
+    default:{for(let i=0;i<3;i++){const gx=r(W),gy=r(H);const gr=ctx.createRadialGradient(gx,gy,0,gx,gy,W*.4+r(W*.3));gr.addColorStop(0,ha(acc,.15));gr.addColorStop(1,'transparent');ctx.fillStyle=gr;ctx.fillRect(0,0,W,H);}}
+  }
+  const vin=ctx.createRadialGradient(W*.5,H*.5,H*.2,W*.5,H*.5,Math.max(W,H)*.8);
+  vin.addColorStop(0,'transparent');vin.addColorStop(1,'rgba(0,0,0,.38)');
+  ctx.fillStyle=vin;ctx.fillRect(0,0,W,H);
+}
+function ha(hex,a){if(!hex||hex.length<7)return`rgba(200,200,200,${a})`;const rv=parseInt(hex.slice(1,3),16),gv=parseInt(hex.slice(3,5),16),bv=parseInt(hex.slice(5,7),16);return`rgba(${rv},${gv},${bv},${a})`;}
+function r(n){return Math.random()*(n||1);}
+
+/* ══════════════ APPLY DESIGN TO CARD ══════════════ */
+function applyDesign(design,poem){
+  const canvas=document.getElementById('cardCanvas');
+  const shell=document.getElementById('cardShell');
+  const W=shell.offsetWidth||370, H=shell.offsetHeight||Math.round(W*4/3);
+  paintCanvas(canvas,design,W*2,H*2);
+  canvas.style.width='100%';canvas.style.height='100%';
+  const t=design.text;
+  const content=document.getElementById('cardContent');
+  const poemEl=document.getElementById('cardPoem');
+  const ornEl=document.getElementById('cardOrn');
+  const ruleEl=document.getElementById('cardRule');
+  const byEl=document.getElementById('cardBy');
+  const borderEl=document.getElementById('cardDecoBorder');
+  poemEl.style.cssText=`color:${t.color};font-family:'${t.font}',serif;font-style:${t.style};text-align:${t.align};width:100%;font-size:.88rem;line-height:2;filter:drop-shadow(0 1px 8px rgba(0,0,0,.55));`;
+  const am={left:'flex-start',center:'center',right:'flex-end'};
+  content.style.alignItems=am[t.align]||'center';
+  ornEl.textContent=t.ornament||'❧';ornEl.style.color=t.color;ornEl.style.width='100%';ornEl.style.textAlign=t.align;
+  ruleEl.style.background=`linear-gradient(90deg,transparent,${t.color},transparent)`;
+  ruleEl.style.margin=t.align==='left'?'13px 0':t.align==='right'?'13px 0 13px auto':'13px auto';
+  byEl.style.color=t.color;byEl.style.textAlign=t.align;byEl.style.width='100%';
+  borderEl.style.border=`1px solid ${ha(t.color,.22)}`;
+  poemEl.innerHTML=poem.split('\n').map(l=>l.trim()).filter(Boolean).map(l=>`<div style="padding:1px 0">${l}</div>`).join('');
+  shell.style.opacity='0';shell.style.transform='translateY(16px)';
+  setTimeout(()=>{shell.style.transition='opacity .6s,transform .6s';shell.style.opacity='1';shell.style.transform='translateY(0)';},40);
+}
+
+/* ══════════════ PROXY API CALL ══════════════ */
+// All calls go to /api/gemini — your Vercel proxy
+// The GEMINI_API_KEY never leaves the server
+async function callGemini(prompt){
+  const res=await fetch('/api/gemini',{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({prompt})
+  });
+  if(!res.ok) throw new Error(`Proxy error: ${res.status}`);
+  const data=await res.json();
+  if(data.error) throw new Error(data.error);
+  return data.text;
+}
+
+/* ══════════════ AI FUNCTIONS ══════════════ */
+async function aiDesignFromStory(story){
+  const prompt=`You are an AI art director and poet. Analyze this personal story and return ONLY valid JSON (no markdown, no backticks):
+{"poem":"4-8 lines free verse inspired by the story, lines separated by \\n","bg":{"type":"one of: radial_stars|petal_drift|horizon_glow|organic_vein|lightning_web|aged_paper|soft_mist|geometric_shards|ink_wash|aurora_veil","colors":["darkest hex","mid hex","lightest hex"],"accent":"hex for glows"},"text":{"color":"high contrast hex for text","align":"left|center|right","font":"one of: Playfair Display|IM Fell English|Libre Baskerville|Spectral|Josefin Sans|Cinzel|Crimson Pro|Tenor Sans|Cormorant Garamond","style":"italic|normal","ornament":"one unicode symbol"}}
+Rules: night/longing=radial_stars deep navy; love=petal_drift crimsons; hope=horizon_glow warm amber; nature=organic_vein greens; grief=lightning_web dark; memory=aged_paper sepia; mystery=aurora_veil teal. Font: Playfair=romance, IM Fell=haunting, Cinzel=ceremonial, Josefin=minimal, Spectral=literary.
+Story: "${story}"`;
+  const text=await callGemini(prompt);
+  return JSON.parse(text.replace(/```json|```/g,'').trim());
+}
+
+async function aiDesignFromPoem(poem){
+  const prompt=`You are an AI art director. Read this poem and design a card for it. Return ONLY valid JSON (no markdown, no backticks):
+{"bg":{"type":"one of: radial_stars|petal_drift|horizon_glow|organic_vein|lightning_web|aged_paper|soft_mist|geometric_shards|ink_wash|aurora_veil","colors":["darkest hex","mid hex","lightest hex"],"accent":"hex for glows"},"text":{"color":"high contrast hex","align":"left|center|right","font":"one of: Playfair Display|IM Fell English|Libre Baskerville|Spectral|Josefin Sans|Cinzel|Crimson Pro|Tenor Sans|Cormorant Garamond","style":"italic|normal","ornament":"one unicode symbol"}}
+Match design to poem's emotional tone carefully. Gentle=soft fonts cool colors. Bold=warm vibrant. Melancholic=dark deep.
+Poem:\n${poem}`;
+  const text=await callGemini(prompt);
+  return JSON.parse(text.replace(/```json|```/g,'').trim());
+}
+
+async function aiSpellCheck(poem){
+  const prompt=`Spell-check this poem. Fix ONLY spelling mistakes. Do NOT change grammar, punctuation, line breaks, style, or any creative choices. Return ONLY valid JSON (no markdown, no backticks):
+{"hasErrors":true or false,"corrected":"full poem with only spelling fixed, lines separated by \\n","changes":[{"original":"misspeled","fixed":"misspelled"}]}
+Poem:\n${poem}`;
+  const text=await callGemini(prompt);
+  return JSON.parse(text.replace(/```json|```/g,'').trim());
+}
+
+async function aiEnhancePoem(poem){
+  const prompt=`You are a poetry editor. Enhance this poem while keeping the author's voice, meaning, and structure intact. Refine word choices, rhythm, imagery only. Keep approximately same number of lines. Return ONLY valid JSON (no markdown, no backticks):
+{"enhanced":"enhanced poem lines separated by \\n","note":"one short sentence explaining what you improved"}
+Poem:\n${poem}`;
+  const text=await callGemini(prompt);
+  return JSON.parse(text.replace(/```json|```/g,'').trim());
+}
+
+/* ══════════════ GENERATE ══════════════ */
+async function generate(){
+  if(writeMode==='story'){
+    const story=document.getElementById('storyInput').value.trim();
+    if(!story){showToast('Please write your story first ✦');return;}
+    lastStory=story; setLoader(true,'Reading your story…');
+    try{
+      let design;
+      if(designMode==='manual'&&selTpl!==null){
+        const base=JSON.parse(JSON.stringify(TEMPLATES[selTpl]));
+        const ai=await aiDesignFromStory(story);
+        base.poem=ai.poem;if(ai.text?.ornament)base.text.ornament=ai.text.ornament;
+        design=base;
+      }else{design=await aiDesignFromStory(story);}
+      curDesign=design;curPoem=design.poem;showCard(design,design.poem);
+    }catch(e){console.error(e);fallback('story');}
+    setLoader(false);return;
+  }
+
+  if(writeMode==='own'){
+    const poem=document.getElementById('ownInput').value.trim();
+    if(!poem){showToast('Please write your poem first ✦');return;}
+    setLoader(true,'Checking spelling…');
+    try{
+      const spellRes=await aiSpellCheck(poem);
+      if(spellRes.hasErrors&&spellRes.changes?.length){
+        spellCorrected=spellRes.corrected;
+        document.getElementById('spellDiff').innerHTML=buildSpellDiff(poem,spellRes.changes);
+        document.getElementById('spellPanel').classList.add('on');
+        showToast(`${spellRes.changes.length} spelling suggestion(s) found`);
+      }else{
+        document.getElementById('spellPanel').classList.remove('on');
+        showToast('No spelling errors found ✦');
+      }
+      setLoader(true,'Designing your card…');
+      let design;
+      if(designMode==='manual'&&selTpl!==null){
+        design=JSON.parse(JSON.stringify(TEMPLATES[selTpl]));
+        try{const d=await aiDesignFromPoem(poem);if(d.text?.ornament)design.text.ornament=d.text.ornament;}catch(e2){}
+      }else{design=await aiDesignFromPoem(poem);}
+      curDesign=design;curPoem=poem;showCard(design,poem);
+    }catch(e){console.error(e);fallback('own');}
+    setLoader(false);return;
+  }
+
+  if(writeMode==='enhance'){
+    const poem=document.getElementById('enhanceInput').value.trim();
+    if(!poem){showToast('Please write your poem first ✦');return;}
+    setLoader(true,'Enhancing your poem…');
+    try{
+      const enhRes=await aiEnhancePoem(poem);
+      enhancedPoem=enhRes.enhanced;
+      document.getElementById('enhanceText').textContent=enhancedPoem;
+      if(enhRes.note)document.getElementById('enhanceNote').textContent=enhRes.note;
+      document.getElementById('enhancePreview').classList.add('on');
+      showToast('Enhanced version ready — accept or keep yours');
+      setLoader(true,'Designing your card…');
+      let design;
+      if(designMode==='manual'&&selTpl!==null){
+        design=JSON.parse(JSON.stringify(TEMPLATES[selTpl]));
+        try{const d=await aiDesignFromPoem(poem);if(d.text?.ornament)design.text.ornament=d.text.ornament;}catch(e2){}
+      }else{design=await aiDesignFromPoem(poem);}
+      curDesign=design;curPoem=poem;showCard(design,poem);
+    }catch(e){console.error(e);fallback('enhance');}
+    setLoader(false);
+  }
+}
+
+/* ══════════════ SHOW CARD / FALLBACK ══════════════ */
+function showCard(design,poem){
+  document.getElementById('cardZone').classList.add('on');
+  document.getElementById('hintBox').style.display='none';
+  setTimeout(()=>applyDesign(design,poem),80);
+}
+function fallback(mode){
+  const d=JSON.parse(JSON.stringify(TEMPLATES[0]));
+  const p=mode==='story'?"In the space between words\nyou left a light on—\na signal I still follow\nthrough seasons that forgot your name."
+    :(document.getElementById(mode==='own'?'ownInput':'enhanceInput').value.trim()||"Words find their home here.");
+  curDesign=d;curPoem=p;showCard(d,p);showToast('Check your internet or try again');
+}
+
+/* ══════════════ REGENERATE ══════════════ */
+async function regenerateCard(){
+  if(!curPoem)return;
+  setLoader(true,'Painting a new world…');
+  try{const d=await aiDesignFromPoem(curPoem);curDesign=d;applyDesign(d,curPoem);}
+  catch(e){const t=TEMPLATES[Math.floor(Math.random()*TEMPLATES.length)];curDesign=JSON.parse(JSON.stringify(t));applyDesign(curDesign,curPoem);}
+  setLoader(false);
+}
+
+/* ══════════════ SPELL DIFF ══════════════ */
+function buildSpellDiff(original,changes){
+  let html=original.replace(/\n/g,'<br>');
+  changes.forEach(ch=>{
+    const safe=ch.original.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+    html=html.replace(new RegExp(`\\b${safe}\\b`,'g'),`<del>${ch.original}</del> <ins>${ch.fixed}</ins>`);
+  });
+  return html;
+}
+
+/* ══════════════ GALLERY ══════════════ */
+function saveCard(){if(!curDesign)return;gallery.unshift({design:JSON.parse(JSON.stringify(curDesign)),poem:curPoem});showToast('Saved to Gallery ✦');}
+function copyPoem(){if(!curPoem)return;navigator.clipboard.writeText(curPoem).then(()=>showToast('Poem copied ✦'));}
+function renderGallery(){
+  const grid=document.getElementById('galGrid');
+  if(!gallery.length){grid.innerHTML='<div class="empty-g">No poems yet — be the first to share your story.</div>';return;}
+  grid.innerHTML=gallery.map((item,i)=>`<div class="gi" onclick="viewGal(${i})"><canvas id="gc${i}"></canvas><div class="gp" style="color:${item.design.text.color};font-family:'${item.design.text.font}',serif;font-style:${item.design.text.style};text-align:${item.design.text.align};">${item.poem.split('\n').slice(0,3).join('<br>')}</div><div class="gh">View</div></div>`).join('');
+  gallery.forEach((item,i)=>{
+    const c=document.getElementById('gc'+i);
+    if(c)setTimeout(()=>{const el=c.parentElement;paintCanvas(c,item.design,el.offsetWidth*2,el.offsetHeight*2);c.style.width='100%';c.style.height='100%';},60*i);
+  });
+}
+function viewGal(i){
+  const item=gallery[i];curDesign=item.design;curPoem=item.poem;
+  goNav('create');document.getElementById('cardZone').classList.add('on');document.getElementById('hintBox').style.display='none';
+  setTimeout(()=>applyDesign(item.design,item.poem),60);
+}
+
+/* ══════════════ TEMPLATE THUMBS ══════════════ */
+function buildTplThumbs(){
+  const grid=document.getElementById('tplGrid');
+  grid.innerHTML=TEMPLATES.map((t,i)=>`<div class="tthumb" id="tt${i}" onclick="pickTpl(${i})"><canvas id="tc${i}"></canvas><div class="tlb">${t.name}</div></div>`).join('');
+  TEMPLATES.forEach((t,i)=>setTimeout(()=>{const el=document.getElementById('tt'+i),c=document.getElementById('tc'+i);paintCanvas(c,t,el.offsetWidth*2,el.offsetHeight*2);c.style.width='100%';c.style.height='100%';},100+i*40));
+}
+function pickTpl(i){selTpl=i;document.querySelectorAll('.tthumb').forEach(t=>t.classList.remove('on'));document.getElementById('tt'+i).classList.add('on');}
+
+/* ══════════════ HOME CARDS ══════════════ */
+function buildHomeCards(){
+  const row=document.getElementById('floatRow');
+  row.innerHTML=[0,1,2,3].map(i=>`<div class="float-card" onclick="goNav('create')"><canvas id="hc${i}"></canvas></div>`).join('');
+  [0,1,2,3].forEach((ti,i)=>setTimeout(()=>{const c=document.getElementById('hc'+i),el=c.parentElement;paintCanvas(c,TEMPLATES[ti],el.offsetWidth*2,el.offsetHeight*2);c.style.width='100%';c.style.height='100%';},80+i*60));
+}
+
+/* ══════════════ HELPERS ══════════════ */
+function setLoader(on,txt){document.getElementById('loader').classList.toggle('on',on);if(txt)document.getElementById('ltxt').textContent=txt;}
+function showToast(msg){const el=document.getElementById('toast');el.textContent=msg;el.classList.add('on');setTimeout(()=>el.classList.remove('on'),3000);}
+
+window.addEventListener('load',()=>{buildHomeCards();buildTplThumbs();});
+</script>
+</body>
+</html>
